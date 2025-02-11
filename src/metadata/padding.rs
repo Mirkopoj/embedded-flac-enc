@@ -1,10 +1,11 @@
-use super::MetaDataBlock;
+use crate::ByteSink;
 
 pub struct Padding<const N: usize>;
 
-impl<const N: usize> MetaDataBlock for Padding<N> {
-    type Array = [u8; N];
-    fn to_bytes(&self) -> Self::Array {
-        [0; N]
+impl<const N: usize> Padding<N> {
+    pub fn write<BS: ByteSink>(&self, sink: &mut BS) {
+        for _ in 0..N {
+            sink.write(0);
+        }
     }
 }

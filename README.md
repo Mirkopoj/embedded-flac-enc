@@ -1,13 +1,33 @@
 embedded-flac-enc
 
 - [ ] MetaData
-  - [x] StreamInfo
+  - [ ] StreamInfo
+    - [x] min-max block size
+    - [x] min-max frame size
+    - [x] sample rate
+    - [x] num channels
+    - [x] bit depth
+    - [x] sample count
+    - [x] MD5
   - [ ] Sadding
   - [ ] Application
   - [ ] SeekTable
   - [ ] VorbisComment
   - [ ] CueSheet
   - [ ] Picture
+- [ ] Frames
+    - [ ] Header 
+        - [ ] Boundary
+        - [ ] BlockSizeBits
+        - [ ] SampleRateBits
+        - [ ] ChannelBits
+        - [ ] BitDepthBits
+        - [ ] CodedNum
+        - [ ] UncommonBlockSize
+        - [ ] UncommonSampleRate
+        - [ ] CRC
+    - [ ] SubFrame
+    - [ ] Footer
 - [ ] Channels
   - [ ] 1
   - [ ] more 

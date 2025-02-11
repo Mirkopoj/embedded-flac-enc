@@ -1,4 +1,4 @@
-use super::MetaDataBlock;
+use crate::ByteSink;
 
 pub struct Application<const N: usize> {
     app_id: AppId,
@@ -50,25 +50,16 @@ impl<const N: usize> Application<N> {
             app_data: [0; N],
         }
     }
-}
 
-impl<const N: usize> MetaDataBlock for Application<N>
-where
-    [(); N + 32]:,
-{
-    type Array = [u8; N + 32];
-    fn to_bytes(&self) -> Self::Array {
-        let mut ret = [0; N + 32];
-        for (i, val) in self
+    pub fn write<BS: ByteSink>(&self, sink: &mut BS) {
+        for val in self
             .app_id
             .id()
             .to_be_bytes()
             .into_iter()
             .chain(self.app_data.into_iter())
-            .enumerate()
         {
-            ret[i] = val;
+            sink.write(val);
         }
-        ret
     }
 }
