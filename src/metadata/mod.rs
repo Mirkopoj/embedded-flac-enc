@@ -1,19 +1,19 @@
 use crate::ByteSink;
 
-struct MetaDataBlockHeader<const N: usize> {
+pub struct MetaDataBlockHeader<const N: usize> {
     is_last: bool,
     block_type: MetaDataBlockType<N>,
 }
 
 impl<const N: usize> MetaDataBlockHeader<N> {
-    fn new(is_last: bool, block_type: MetaDataBlockType<N>) -> Self {
+    pub fn new(is_last: bool, block_type: MetaDataBlockType<N>) -> Self {
         Self {
             is_last,
             block_type,
         }
     }
 
-    fn write<BS: ByteSink>(&self, sink: &mut BS) {
+    pub fn write<BS: ByteSink>(&self, sink: &mut BS) {
         let last_flag = if self.is_last {
             0b1000_0000
         } else {
@@ -24,7 +24,7 @@ impl<const N: usize> MetaDataBlockHeader<N> {
 }
 
 #[repr(u8)]
-enum MetaDataBlockType<const N: usize> {
+pub enum MetaDataBlockType<const N: usize> {
     StreamInfo(stream_info::StreamInfo) = 0,
     Padding(padding::Padding<N>) = 1,
     Application(application::Application<N>) = 2,
@@ -54,4 +54,4 @@ impl<const N: usize> MetaDataBlockType<N> {
 mod application;
 mod padding;
 mod seek_table;
-mod stream_info;
+pub mod stream_info;

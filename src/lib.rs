@@ -30,5 +30,5 @@ impl<const N: usize> ByteSink for BufferByteSink<N> {
 }
 
 mod frames;
-mod metadata;
+pub mod metadata;
 mod utils;
