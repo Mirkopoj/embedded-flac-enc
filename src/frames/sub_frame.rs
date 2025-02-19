@@ -2,6 +2,7 @@ use core::{cmp::min, ops::Sub};
 
 use crate::{BitSink, BitSinkAdapter, ByteSink};
 
+#[derive(Clone, Copy)]
 pub struct SubFrame<const N: usize> {
     header: SubFrameType,
     wasted_bits: u8,
@@ -10,6 +11,15 @@ pub struct SubFrame<const N: usize> {
 }
 
 impl<const N: usize> SubFrame<N> {
+    pub fn new(header: SubFrameType, wasted_bits: u8, bit_depth: u8, samples: [i32; N]) -> Self {
+        Self {
+            header,
+            wasted_bits,
+            bit_depth,
+            samples,
+        }
+    }
+
     #[allow(clippy::cast_possible_truncation)]
     pub fn write<BS: ByteSink>(&self, sink: &mut BS) {
         let wasted_bits_flag = u8::from(self.wasted_bits != 0);
@@ -126,7 +136,7 @@ impl<const N: usize> SubFrame<N> {
 }
 
 #[derive(Clone, Copy)]
-enum SubFrameType {
+pub enum SubFrameType {
     Constant = 0b000_000,
     Verbatim = 0b000_001,
     FixedPredictorOrder0 = 0b001_000,
@@ -234,7 +244,7 @@ impl<
 
 trait PredictorIter<
     const N: usize,
-    F: Fn(&[I::Item], usize) -> Self::Item,
+    F: Fn(&[Self::Item], usize) -> Self::Item,
     S: Sub<Output = S> + Copy,
 >: Iterator<Item = S>
 {

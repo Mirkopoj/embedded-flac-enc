@@ -69,6 +69,81 @@ pub fn crc8_remainder(bit_stream: &[u8], crc_polynomial: u8, initial: u8) -> u8 
     res
 }
 
+pub struct BitIterator16<I: Iterator<Item = u8>> {
+    iter: I,
+    first: Option<u8>,
+    second: Option<u8>,
+    last: Option<u8>,
+    bit: u8,
+}
+
+impl<I: Iterator<Item = u8>> BitIterator16<I> {
+    pub fn new(mut iter: I) -> Self {
+        let first = iter.next();
+        let second = iter.next();
+        let last = iter.next();
+        Self {
+            iter,
+            first,
+            second,
+            last,
+            bit: 0,
+        }
+    }
+}
+
+impl<I: Iterator<Item = u8>> Iterator for BitIterator16<I> {
+    type Item = u16;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let first = u16::from(self.first?);
+        let second = u16::from(self.second?);
+        let ret = if self.bit == 0 {
+            first << 8 | second
+        } else {
+            let last = u16::from(self.last?);
+            first << (8 + self.bit) | second << self.bit | last >> (16 - self.bit)
+        };
+        self.bit += 1;
+        if self.bit == 16 {
+            self.bit = 0;
+            self.first = self.last;
+            self.last = self.iter.next();
+        }
+        Some(ret)
+    }
+}
+
+pub trait BitIter16: Iterator<Item = u8> {
+    fn bit_iter16(self) -> BitIterator16<Self>
+    where
+        Self: Sized,
+    {
+        BitIterator16::new(self)
+    }
+}
+
+impl<I: Iterator<Item = u8>> BitIter16 for I {}
+
+pub fn crc16_remainder(bit_stream: &[u8], crc_polynomial: u16, initial: u16) -> u16 {
+    let rigth_pad = initial.to_be_bytes();
+    let mut it = bit_stream
+        .iter()
+        .chain(rigth_pad.iter())
+        .copied()
+        .bit_iter16();
+    let mut res = it.next().unwrap();
+    for next in it {
+        let msb = res & 0b1000_0000_0000_0000;
+        res = (res << 1) | (next & 1);
+        if msb != 0b1000_0000_0000_0000 {
+            continue;
+        }
+        res ^= crc_polynomial;
+    }
+    res
+}
+
 #[cfg(test)]
 mod tests {
     use super::{crc8_remainder, BitIter};

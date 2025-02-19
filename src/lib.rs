@@ -55,7 +55,7 @@ impl<'a, BS: ByteSink> BitSinkAdapter<'a, BS> {
     }
 }
 
-impl<'a, BS: ByteSink> Drop for BitSinkAdapter<'a, BS> {
+impl<BS: ByteSink> Drop for BitSinkAdapter<'_, BS> {
     fn drop(&mut self) {
         self.sink.write(self.buff);
     }

@@ -183,7 +183,7 @@ impl SampleRateBits {
 }
 
 #[derive(Clone, Copy)]
-enum ChannelBits {
+pub enum ChannelBits {
     Mono = 0b0000,
     LeftRight = 0b0001,
     LeftRightCenter = 0b0010,
