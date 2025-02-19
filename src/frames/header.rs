@@ -1,4 +1,4 @@
-use crate::{BufferByteSink, ByteSink};
+use crate::{utils::crc8_remainder, BufferByteSink, ByteSink};
 
 pub struct FrameHeader {
     boundary: Boundary,
@@ -45,7 +45,9 @@ impl FrameHeader {
     }
 
     pub fn write<BS: ByteSink>(&self, sink: &mut BS) {
-        let mut buff: BufferByteSink<15> = BufferByteSink::new();
+        const CRC_POLYNOMIAL: u8 = 0b0000_0111;
+        const CRC_INITIAL: u8 = 0b0000_0000;
+        let mut buff: BufferByteSink<16> = BufferByteSink::new();
         (self.boundary as u16)
             .to_be_bytes()
             .iter()
@@ -71,6 +73,9 @@ impl FrameHeader {
             }
             _ => (),
         }
+        let crc = crc8_remainder(buff.as_slice(), CRC_POLYNOMIAL, CRC_INITIAL);
+        buff.write(crc);
+        buff.as_slice().iter().for_each(|&byte| sink.write(byte));
     }
 }
 
