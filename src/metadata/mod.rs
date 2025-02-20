@@ -20,6 +20,7 @@ impl<const N: usize> MetaDataBlockHeader<N> {
             0b0000_0000
         };
         sink.write(last_flag | self.block_type.as_byte());
+        self.block_type.write(sink);
     }
 }
 

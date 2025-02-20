@@ -185,13 +185,16 @@ fn write_sample(sample: i32, bit_sink: &mut impl BitSink, bit_depth: u8, wasted_
     let partial = used_bits % 8;
     let partial_bytes = usize::from(partial != 0);
     let skip = 4 - partial_bytes - full_bytes;
-    let mut iter = wasted_sample.to_be_bytes().into_iter().skip(skip);
+    let bytes = wasted_sample.to_be_bytes();
+    let mut iter = bytes.into_iter().skip(skip);
     if partial != 0 {
         if let Some(next) = iter.next() {
             bit_sink.write(next, partial);
         }
     }
-    iter.for_each(|byte| bit_sink.write(byte, 8));
+    iter.for_each(|byte| {
+        bit_sink.write(byte, 8);
+    });
 }
 
 struct Predictor<

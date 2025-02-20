@@ -2,6 +2,7 @@ use core::cmp::{max, min};
 
 use crate::ByteSink;
 
+#[derive(Clone, Copy)]
 pub struct StreamInfo {
     min_block_size: u16,
     max_block_size: u16,
@@ -19,8 +20,8 @@ impl StreamInfo {
         Self {
             min_block_size: u16::MAX,
             max_block_size: u16::MIN,
-            min_frame_size: 0,
-            max_frame_size: 0,
+            min_frame_size: u32::MAX,
+            max_frame_size: u32::MIN,
             sample_rate,
             channels,
             bits_per_sample,
@@ -35,7 +36,16 @@ impl StreamInfo {
         self.interchannel_sample_count += u64::from(size);
     }
 
+    pub fn added_frame_with(&mut self, size: u32) {
+        self.min_frame_size = min(self.min_frame_size, size);
+        self.max_frame_size = max(self.max_frame_size, size);
+    }
+
+
     pub fn write<BS: ByteSink>(&self, sink: &mut BS) {
+        sink.write(0);
+        sink.write(0);
+        sink.write(34);
         self.min_block_size
             .to_be_bytes()
             .iter()
@@ -43,16 +53,16 @@ impl StreamInfo {
             .chain(self.min_frame_size.to_be_bytes()[1..].iter())
             .chain(self.max_frame_size.to_be_bytes()[1..].iter())
             .for_each(|&byte| sink.write(byte));
-        sink.write(((self.sample_rate >> 12) & 8) as u8);
-        sink.write(((self.sample_rate >> 4) & 8) as u8);
+        sink.write(((self.sample_rate >> 12) & 0xFF) as u8);
+        sink.write(((self.sample_rate >> 4) & 0xFF) as u8);
         sink.write(
-            (((self.sample_rate & 4) as u8) << 4)
-                & (((self.channels - 1) & 3) << 1)
-                & (((self.bits_per_sample - 1) >> 4) & 1),
+            (((self.sample_rate & 0xF) as u8) << 4)
+                | (((self.channels - 1) & 0x7) << 1)
+                | (((self.bits_per_sample - 1) >> 4) & 1),
         );
         sink.write(
-            (((self.bits_per_sample - 1) & 4) << 4)
-                & (((self.interchannel_sample_count >> 32) & 4) as u8),
+            ((self.bits_per_sample - 1) << 4)
+                | (((self.interchannel_sample_count >> 32) & 0xF) as u8),
         );
         self.interchannel_sample_count.to_be_bytes()[4..]
             .iter()

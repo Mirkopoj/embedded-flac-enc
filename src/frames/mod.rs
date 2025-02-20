@@ -42,10 +42,12 @@ impl<const CHANNELS: usize, const BLOCK_SIZE: usize> Frame<CHANNELS, BLOCK_SIZE>
             .iter()
             .for_each(|&sub_frame| sub_frame.write(&mut buff));
         let crc = crc16_remainder(buff.as_slice(), CRC_POLYNOMIAL, CRC_INITIAL);
-        buff.buff.iter().for_each(|&byte| sink.write(byte));
+        buff.as_slice()
+            .iter()
+            .for_each(|&byte| sink.write(byte));
         crc.to_be_bytes().iter().for_each(|&byte| sink.write(byte));
     }
 }
 
-mod header;
-mod sub_frame;
+pub mod header;
+pub mod sub_frame;

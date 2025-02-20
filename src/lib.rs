@@ -30,6 +30,10 @@ impl<const N: usize> BufferByteSink<N> {
     pub fn as_slice(&self) -> &[u8] {
         &self.buff[0..self.length]
     }
+
+    pub fn del_last(&mut self) {
+        self.length -= 1;
+    }
 }
 
 impl<const N: usize> ByteSink for BufferByteSink<N> {
@@ -57,7 +61,9 @@ impl<'a, BS: ByteSink> BitSinkAdapter<'a, BS> {
 
 impl<BS: ByteSink> Drop for BitSinkAdapter<'_, BS> {
     fn drop(&mut self) {
-        self.sink.write(self.buff);
+        if self.bits != 0 {
+            self.sink.write(self.buff);
+        }
     }
 }
 
@@ -76,15 +82,16 @@ impl<BS: ByteSink> BitSink for BitSinkAdapter<'_, BS> {
             self.buff = next_bits << shift;
         } else {
             self.buff |= next_bits << shift;
-            self.bits += shift as u8;
+            self.bits = 8 - shift as u8;
             if self.bits == 8 {
                 self.sink.write(self.buff);
                 self.bits = 0;
+                self.buff = 0;
             }
         }
     }
 }
 
-mod frames;
+pub mod frames;
 pub mod metadata;
 mod utils;

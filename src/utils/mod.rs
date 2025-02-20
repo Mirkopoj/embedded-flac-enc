@@ -102,12 +102,13 @@ impl<I: Iterator<Item = u8>> Iterator for BitIterator16<I> {
             first << 8 | second
         } else {
             let last = u16::from(self.last?);
-            first << (8 + self.bit) | second << self.bit | last >> (16 - self.bit)
+            first << (8 + self.bit) | second << self.bit | last >> (8 - self.bit)
         };
         self.bit += 1;
-        if self.bit == 16 {
+        if self.bit == 8 {
             self.bit = 0;
-            self.first = self.last;
+            self.first = self.second;
+            self.second = self.last;
             self.last = self.iter.next();
         }
         Some(ret)
@@ -146,7 +147,7 @@ pub fn crc16_remainder(bit_stream: &[u8], crc_polynomial: u16, initial: u16) -> 
 
 #[cfg(test)]
 mod tests {
-    use super::{crc8_remainder, BitIter};
+    use super::{crc16_remainder, crc8_remainder, BitIter, BitIter16};
 
     #[test]
     fn bit_iter() {
@@ -177,5 +178,28 @@ mod tests {
         let slice: [u8; 3] = [0b0011_0100, 0b1100_0001, 0b0110_1100];
         let crc = crc8_remainder(&slice, 7, 0);
         assert_eq!(crc, 0b1011_0001);
+    }
+
+    #[test]
+    fn bit_iter16() {
+        let slice: [u8; 3] = [0b0011_0100, 0b1100_0001, 0b0110_1100];
+        let mut it = slice.iter().copied().bit_iter16();
+        assert_eq!(Some(0b0011_0100_1100_0001), it.next());
+        assert_eq!(Some(0b0110_1001_1000_0010), it.next());
+        assert_eq!(Some(0b1101_0011_0000_0101), it.next());
+        assert_eq!(Some(0b1010_0110_0000_1011), it.next());
+        assert_eq!(Some(0b0100_1100_0001_0110), it.next());
+        assert_eq!(Some(0b1001_1000_0010_1101), it.next());
+        assert_eq!(Some(0b0011_0000_0101_1011), it.next());
+        assert_eq!(Some(0b0110_0000_1011_0110), it.next());
+        assert_eq!(Some(0b1100_0001_0110_1100), it.next());
+        assert_eq!(None, it.next());
+    }
+
+    #[test]
+    fn crc16() {
+        let slice: [u8; 8] = [0xAF, 0x72, 0x3C, 0x4C, 0x1E, 0x06, 0xC9, 0xA0];
+        let crc = crc16_remainder(&slice, 32773, 0);
+        assert_eq!(crc, 0x9753);
     }
 }

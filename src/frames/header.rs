@@ -74,8 +74,8 @@ impl FrameHeader {
             _ => (),
         }
         let crc = crc8_remainder(buff.as_slice(), CRC_POLYNOMIAL, CRC_INITIAL);
-        buff.write(crc);
         buff.as_slice().iter().for_each(|&byte| sink.write(byte));
+        sink.write(crc);
     }
 }
 
